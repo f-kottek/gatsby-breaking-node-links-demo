@@ -1,115 +1,111 @@
 const path = require(`path`)
-const { createFilePath } = require(`gatsby-source-filesystem`)
+const {
+  createFilePath,
+  createRemoteFileNode,
+} = require(`gatsby-source-filesystem`)
+const allArticles = require("./src/data/articles.json")
+
+exports.sourceNodes = async ({
+  actions: { createNode, createNodeField },
+  createContentDigest,
+  createNodeId,
+  getCache,
+}) => {
+  const promisedArticles = allArticles.map(async article => {
+    const { title, images, thumbnail_url, test } = article
+
+    const article_node_id = createNodeId(title)
+
+    const promisedArticleImages = images?.map(async ({ url }) => {
+      let articleImageNode
+      try {
+        articleImageNode = await createRemoteFileNode({
+          url: url,
+          parentNodeId: article_node_id,
+          getCache,
+          createNode,
+          createNodeId,
+        })
+      } catch (error) {
+        console.log(error)
+      }
+      return articleImageNode
+    })
+
+    const all_article_image_nodes = await Promise.all(promisedArticleImages)
+
+    let thumbnailImageNode
+
+    try {
+      thumbnailImageNode = await createRemoteFileNode({
+        url: thumbnail_url,
+        parentNodeId: article_node_id,
+        createNodeId,
+        createNode,
+        getCache,
+      })
+    } catch (error) {
+      console.log(error)
+    }
+
+    const articleNode = await createNode({
+      article_images_source: images,
+      article_images: all_article_image_nodes?.map(({ id }) => id),
+      thumbnail: thumbnailImageNode?.id,
+      thumbnail_url: thumbnail_url,
+      title: title,
+      id: article_node_id,
+      parent: null,
+      children: [],
+      internal: {
+        type: `BlogArticle`,
+        contentDigest: createContentDigest(article),
+      },
+    })
+    return articleNode
+  })
+  await Promise.all(promisedArticles)
+}
+
+exports.createSchemaCustomization = ({ actions }) => {
+  const { createTypes } = actions
+  const typeDefs = `
+
+    type BlogArticle implements Node {
+      article_images: [File] @link,
+      thumbnail: File @link
+    }
+  `
+  createTypes(typeDefs)
+}
 
 exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions
-
-  // Define a template for blog post
-  const blogPost = path.resolve(`./src/templates/blog-post.js`)
 
   // Get all markdown blog posts sorted by date
   const result = await graphql(
     `
       {
-        allMarkdownRemark(
-          sort: { fields: [frontmatter___date], order: ASC }
-          limit: 1000
-        ) {
+        allBlogArticle {
           nodes {
             id
-            fields {
-              slug
-            }
+            title
           }
         }
       }
     `
   )
-
-  if (result.errors) {
-    reporter.panicOnBuild(
-      `There was an error loading your blog posts`,
-      result.errors
-    )
-    return
-  }
-
-  const posts = result.data.allMarkdownRemark.nodes
-
+  const articles = result.data.allBlogArticle.nodes
   // Create blog posts pages
   // But only if there's at least one markdown file found at "content/blog" (defined in gatsby-config.js)
   // `context` is available in the template as a prop and as a variable in GraphQL
-
-  if (posts.length > 0) {
-    posts.forEach((post, index) => {
-      const previousPostId = index === 0 ? null : posts[index - 1].id
-      const nextPostId = index === posts.length - 1 ? null : posts[index + 1].id
-
-      createPage({
-        path: post.fields.slug,
-        component: blogPost,
-        context: {
-          id: post.id,
-          previousPostId,
-          nextPostId,
-        },
-      })
+  articles.map(({ id, title }) => {
+    createPage({
+      path: title,
+      component: path.resolve(`./src/templates/blog-article.js`),
+      context: {
+        id: id,
+      },
     })
-  }
-}
-
-exports.onCreateNode = ({ node, actions, getNode }) => {
-  const { createNodeField } = actions
-
-  if (node.internal.type === `MarkdownRemark`) {
-    const value = createFilePath({ node, getNode })
-
-    createNodeField({
-      name: `slug`,
-      node,
-      value,
-    })
-  }
-}
-
-exports.createSchemaCustomization = ({ actions }) => {
-  const { createTypes } = actions
-
-  // Explicitly define the siteMetadata {} object
-  // This way those will always be defined even if removed from gatsby-config.js
-
-  // Also explicitly define the Markdown frontmatter
-  // This way the "MarkdownRemark" queries will return `null` even when no
-  // blog posts are stored inside "content/blog" instead of returning an error
-  createTypes(`
-    type SiteSiteMetadata {
-      author: Author
-      siteUrl: String
-      social: Social
-    }
-
-    type Author {
-      name: String
-      summary: String
-    }
-
-    type Social {
-      twitter: String
-    }
-
-    type MarkdownRemark implements Node {
-      frontmatter: Frontmatter
-      fields: Fields
-    }
-
-    type Frontmatter {
-      title: String
-      description: String
-      date: Date @dateformat
-    }
-
-    type Fields {
-      slug: String
-    }
-  `)
+  })
 }
