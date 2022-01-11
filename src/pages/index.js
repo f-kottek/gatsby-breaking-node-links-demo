@@ -15,7 +15,6 @@ const BlogIndex = ({ data, location }) => {
     <Layout location={location} title={siteTitle}>
       <Seo title="All posts" />
       {posts.map(({ title, thumbnail }) => {
-        console.log(thumbnail)
         return (
           <div key={title}>
             <Link to={`/${title}`} itemProp="url">

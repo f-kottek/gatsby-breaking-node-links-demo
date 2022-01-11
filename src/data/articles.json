@@ -1,6 +1,7 @@
 [
   {
     "title": "article-1",
+    "text_content": "article-1 content",
     "images": [
       {
         "url": "https://images.unsplash.com/photo-1487958449943-2429e8be8625"
@@ -17,6 +18,7 @@
   },
   {
     "title": "article-2",
+    "text_content": "article-2 content",
     "images": [
       {
         "url": "https://images.unsplash.com/photo-1493397212122-2b85dda8106b"
@@ -32,7 +34,14 @@
   },
   {
     "title": "article-3",
+    "text_content": "article-3 content",
     "images": [],
+    "thumbnail_url": "https://images.unsplash.com/photo-1560790671-b76ca4de55ef"
+  },
+  {
+    "title": "article-4",
+    "images": [],
+    "text_content": "article-4 content",
     "thumbnail_url": "https://images.unsplash.com/photo-1560790671-b76ca4de55ef"
   }
 ]

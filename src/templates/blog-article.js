@@ -8,7 +8,7 @@ import Seo from "../components/seo"
 
 const ArticleTemplate = ({ data, location, pageContext }) => {
   const { blogArticle } = data
-  const { title, article_images } = blogArticle
+  const { title, article_images, text_content } = blogArticle
   return (
     <Layout location={location} title={title}>
       <Seo
@@ -23,6 +23,7 @@ const ArticleTemplate = ({ data, location, pageContext }) => {
         <header>
           <h1 itemProp="headline">{title}</h1>
         </header>
+        <p>{text_content}</p>
         {article_images.map(image => (
           <GatsbyImage
             style={{ width: 300, margin: "20px" }}
@@ -40,6 +41,7 @@ export const query = graphql`
   query ($id: String!) {
     blogArticle(id: { eq: $id }) {
       title
+      text_content
       article_images {
         childImageSharp {
           gatsbyImageData(width: 300, layout: FIXED)

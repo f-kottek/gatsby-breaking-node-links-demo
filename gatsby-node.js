@@ -12,7 +12,7 @@ exports.sourceNodes = async ({
   getCache,
 }) => {
   const promisedArticles = allArticles.map(async article => {
-    const { title, images, thumbnail_url, test } = article
+    const { title, images, thumbnail_url, text_content } = article
 
     const article_node_id = createNodeId(title)
 
@@ -54,6 +54,7 @@ exports.sourceNodes = async ({
       thumbnail: thumbnailImageNode?.id,
       thumbnail_url: thumbnail_url,
       title: title,
+      text_content: text_content,
       id: article_node_id,
       parent: null,
       children: [],
