@@ -18,9 +18,13 @@ The first build (and all consecutive build w/out changes) will run just fine, al
 
 ### Working gatsby dev:
 
+Notice how all `article_images`-nodes have an ID and also each one has a `childImageSharp`-node with an own ID.
+
 ![working](./readme-content/gatsby-dev-working.png)
 
 ### Crashing gatsby dev after changing the content:
+
+Notice how all `article_images`-nodes have an ID, but `childImageSharp` is always `null`
 
 ![working](./readme-content/gatsby-dev-crashing.png)
 
