@@ -10,29 +10,52 @@ exports.sourceNodes = async ({
   createContentDigest,
   createNodeId,
   getCache,
+  getNodesByType,
 }) => {
+  // this is needed for the fix, unused, when part 1 and 2 are commented out
+  const all_cached_file_nodes = await getNodesByType(`File`)
+
   const promisedArticles = allArticles.map(async article => {
     const { title, images, thumbnail_url, text_content } = article
 
     const article_node_id = createNodeId(title)
 
-    const promisedArticleImages = images?.map(async ({ url }) => {
-      let articleImageNode
-      try {
-        articleImageNode = await createRemoteFileNode({
-          url: url,
-          parentNodeId: article_node_id,
-          getCache,
-          createNode,
-          createNodeId,
-        })
-      } catch (error) {
-        console.log(error)
-      }
-      return articleImageNode
-    })
+    const all_article_image_nodes = await Promise.all(
+      images?.map(async ({ url }) => {
+        let articleImageNode
 
-    const all_article_image_nodes = await Promise.all(promisedArticleImages)
+        // Part 1 of the fix here
+
+        // const cached_image_node = all_cached_file_nodes.find(
+        //   image => image.url === url
+        // )
+        // if (!cached_image_node) {
+
+        try {
+          articleImageNode = await createRemoteFileNode({
+            url: url,
+            parentNodeId: article_node_id,
+            createNode,
+            createNodeId,
+            getCache,
+            name: `articleImage`,
+          })
+          await createNodeField({
+            node: articleImageNode,
+            name: `caption`,
+            value: `Caption for image`,
+          })
+        } catch (error) {
+          console.log(error)
+        }
+
+        // Part 2, uncomment these two to keep the build running after chaning the json file
+        // } else {
+        //   articleImageNode = cached_image_node
+        // }
+        return articleImageNode
+      })
+    )
 
     let thumbnailImageNode
 
